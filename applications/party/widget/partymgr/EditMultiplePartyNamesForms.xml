@@ -5,15 +5,15 @@
 
     <form name="EditPerson" type="single" skip-start="true" skip-end="true" default-map-name="party">
         <field name="index" map-name="."><display/></field>
-        <field name="partyId"><display/></field>
-        <field name="firstName"><text/></field>
-        <field name="lastName"><text/></field>
+        <field name="partyId" parameter-name="partyId${index}"><display/></field>
+        <field name="firstName" parameter-name="firstName${index}"><text/></field>
+        <field name="lastName" parameter-name="lastName${index}"><text/></field>
     </form>
 
     <form name="EditGroup" type="single" skip-start="true" skip-end="true" default-map-name="party">
         <field name="index" map-name="."><display/></field>
-        <field name="partyId"><display/></field>
-        <field name="groupName"><text/></field>
+        <field name="partyId" parameter-name="partyId${index}"><display/></field>
+        <field name="groupName" parameter-name="groupName${index}"><text/></field>
     </form>
 
     <form name="EditMultiplePartyNamesStart" type="single" target="updateMultiplePartyNames" skip-end="true">
