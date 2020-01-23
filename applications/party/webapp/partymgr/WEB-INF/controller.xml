@@ -1329,6 +1329,14 @@ under the License.
         <response name="success" type="view" value="ProfileEditUserLoginSecurityGroups"/>
     </request-map>
 
+    <request-map uri="EditMultipleDemo">
+        <response name="success" type="view" value="EditMultipleDemoView"/>
+    </request-map>
+
+    <request-map uri="updateMultiplePartyNames">
+        <response name="success" type="view" value="UpdateMultiplePartyNamesResultsView"/>
+    </request-map>
+
     <!-- end of request mappings -->
 
     <!-- View Mappings -->
@@ -1468,6 +1476,11 @@ under the License.
 
     <!-- GeoLocation-->
     <view-map name="addGeoLocation" type="screen" page="component://party/widget/partymgr/PartyScreens.xml#EditGeoLocation"/>
+
+
+    <view-map name="EditMultipleDemoView" type="screen" page="component://party/widget/partymgr/EditMultiplePartyNamesScreens.xml#EditMultiplePartyNamesScreen"/>
+
+    <view-map name="UpdateMultiplePartyNamesResultsView" type="screen" page="component://party/widget/partymgr/EditMultiplePartyNamesScreens.xml#UpdateMultiplePartyNamesResultsScreen"/>
 
     <!-- end of view mappings -->
 </site-conf>

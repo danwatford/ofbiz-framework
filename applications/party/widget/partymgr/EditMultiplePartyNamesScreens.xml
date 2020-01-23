@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<screens xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xmlns="http://ofbiz.apache.org/Widget-Screen"
+         xsi:schemaLocation="http://ofbiz.apache.org/Widget-Screen http://ofbiz.apache.org/dtds/widget-screen.xsd">
+    <screen name="EditMultiplePartyNamesScreen">
+        <section>
+            <actions>
+                <set field="layoutSettings.styleSheets[]" value="/partymgr/static/EditMultiplePartyNames.css" global="true"/>
+                <script location="component://party/groovyscripts/EditMultiplePartyNames.groovy"/>
+            </actions>
+            <widgets>
+                <decorator-screen name="CommonPartyDecorator" location="${parameters.mainDecoratorLocation}">
+                    <decorator-section name="body">
+
+                        <include-form name="EditMultiplePartyNamesStart"
+                                      location="component://party/widget/partymgr/EditMultiplePartyNamesForms.xml"/>
+
+                        <container style="party-edit-panels">
+                            <platform-specific>
+                                <html>
+                                    <html-template
+                                            location="component://party/template/EditPartyIterator.ftl"/>
+                                </html>
+                            </platform-specific>
+                        </container>
+
+                        <include-form name="EditMultiplePartyNamesEnd"
+                                      location="component://party/widget/partymgr/EditMultiplePartyNamesForms.xml"/>
+
+                    </decorator-section>
+                </decorator-screen>
+            </widgets>
+        </section>
+    </screen>
+
+    <screen name="EditPersonEmbeddedScreen">
+        <section>
+            <widgets>
+                <container style="party-edit-panel party-edit-person-panel">
+                    <include-form name="EditPerson" location="component://party/widget/partymgr/EditMultiplePartyNamesForms.xml"/>
+                </container>
+            </widgets>
+        </section>
+    </screen>
+
+    <screen name="EditGroupEmbeddedScreen">
+        <section>
+            <widgets>
+                <container style="party-edit-panel party-edit-group-panel">
+                    <include-form name="EditGroup" location="component://party/widget/partymgr/EditMultiplePartyNamesForms.xml"/>
+                </container>
+            </widgets>
+        </section>
+    </screen>
+
+    <screen name="UpdateMultiplePartyNamesResultsScreen">
+        <section>
+            <actions>
+                <script location="component://party/groovyscripts/UpdateMultiplePartyNamesResults.groovy"/>
+            </actions>
+            <widgets>
+                <platform-specific>
+                    <html>
+                        <html-template
+                                location="component://party/template/ShowParams.ftl"/>
+                    </html>
+                </platform-specific>
+            </widgets>
+        </section>
+    </screen>
+
+</screens>

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<forms xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns="http://ofbiz.apache.org/Widget-Form"
+       xsi:schemaLocation="http://ofbiz.apache.org/Widget-Form http://ofbiz.apache.org/dtds/widget-form.xsd">
+
+    <form name="EditPerson" type="single" skip-start="true" skip-end="true" default-map-name="party">
+        <field name="index" map-name="."><display/></field>
+        <field name="partyId"><display/></field>
+        <field name="firstName"><text/></field>
+        <field name="lastName"><text/></field>
+    </form>
+
+    <form name="EditGroup" type="single" skip-start="true" skip-end="true" default-map-name="party">
+        <field name="index" map-name="."><display/></field>
+        <field name="partyId"><display/></field>
+        <field name="groupName"><text/></field>
+    </form>
+
+    <form name="EditMultiplePartyNamesStart" type="single" target="updateMultiplePartyNames" skip-end="true">
+    </form>
+
+    <form name="EditMultiplePartyNamesEnd" type="single" skip-start="true">
+        <field name="submitButton" title="${uiLabelMap.CommonUpdate}">
+            <submit button-type="button"/>
+        </field>
+    </form>
+</forms>
