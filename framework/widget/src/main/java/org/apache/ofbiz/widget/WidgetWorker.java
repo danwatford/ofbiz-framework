@@ -18,6 +18,9 @@
  *******************************************************************************/
 package org.apache.ofbiz.widget;
 
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.HashMap;
 import java.util.Map;
 
 import javax.servlet.ServletContext;
@@ -40,10 +43,6 @@ import org.jsoup.nodes.Element;
 import org.jsoup.nodes.FormElement;
 import org.jsoup.parser.Parser;
 import org.jsoup.parser.Tag;
-
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.HashMap;
 
 import static org.apache.ofbiz.base.util.UtilValidate.isNotEmpty;
 
@@ -159,9 +158,9 @@ public final class WidgetWorker {
     }
 
     public static Element makeHiddenFormLinkFormElement(String target, String targetType,
-                                              String targetWindow, Map<String, String> parameterMap,
-                                              ModelFormField modelFormField, HttpServletRequest request,
-                                              HttpServletResponse response, Map<String, Object> context) {
+                                                        String targetWindow, Map<String, String> parameterMap,
+                                                        ModelFormField modelFormField, HttpServletRequest request,
+                                                        HttpServletResponse response, Map<String, Object> context) {
 
         final FormElement formElement = new FormElement(Tag.valueOf("form"), null, null);
         formElement.attr("method", "post");

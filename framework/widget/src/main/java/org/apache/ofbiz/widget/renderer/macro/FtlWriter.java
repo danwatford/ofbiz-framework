@@ -25,6 +25,10 @@ import org.apache.ofbiz.base.util.Debug;
 import org.apache.ofbiz.base.util.UtilMisc;
 import org.apache.ofbiz.base.util.template.FreeMarkerWorker;
 import org.apache.ofbiz.widget.renderer.VisualTheme;
+import org.apache.ofbiz.widget.renderer.macro.ftlelement.HtmlFtlElement;
+import org.apache.ofbiz.widget.renderer.macro.ftlelement.MacroCallFtlElement;
+import org.apache.ofbiz.widget.renderer.macro.ftlelement.FtlElement;
+import org.apache.ofbiz.widget.renderer.macro.ftlelement.NoopFtlElement;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -36,6 +40,7 @@ import java.util.WeakHashMap;
 public final class FtlWriter {
     private static final String MODULE = FtlWriter.class.getName();
 
+    private final FtlMacroCallStringRenderer macroCallRenderer = FtlMacroCallStringRenderer.INSTANCE;
     private final WeakHashMap<Appendable, Environment> environments = new WeakHashMap<>();
     private final Template macroLibrary;
     private final VisualTheme visualTheme;
@@ -43,6 +48,18 @@ public final class FtlWriter {
     public FtlWriter(final String macroLibraryPath, final VisualTheme visualTheme) throws IOException {
         this.macroLibrary = FreeMarkerWorker.getTemplate(macroLibraryPath);
         this.visualTheme = visualTheme;
+    }
+
+    public void executeMacro(final Appendable writer, final FtlElement ftlElement) {
+        if (ftlElement instanceof MacroCallFtlElement) {
+            executeMacro(writer, macroCallRenderer.render((MacroCallFtlElement) ftlElement));
+        } else if (ftlElement instanceof NoopFtlElement) {
+            // No action needed.
+        } else if (ftlElement instanceof HtmlFtlElement) {
+            executeMacro(writer, ((HtmlFtlElement) ftlElement).getHtml());
+        } else {
+            throw new UnsupportedOperationException("Cannot write FtlElement: " + ftlElement);
+        }
     }
 
     public void executeMacro(Appendable writer, String macro) {
