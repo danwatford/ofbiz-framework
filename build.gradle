@@ -297,6 +297,9 @@ gitHooks {
     hooks = ['pre-push': 'checkstyleMain']
 }
 
+// Don't generate lombok configuration files.
+generateLombokConfig.enabled = false
+
 // Eclipse plugin settings
 eclipse.classpath.file.whenMerged { classpath ->
     /* The code inside this block removes unnecessary entries
