@@ -16,14 +16,19 @@
  * specific language governing permissions and limitations
  * under the License.
  *******************************************************************************/
-package org.apache.ofbiz.widget.renderer.macro.ftlelement;
+package org.apache.ofbiz.widget.renderer.macro.renderable;
 
 import lombok.ToString;
 
 @ToString
-public final class NoopFtlElement implements FtlElement {
-    public static final NoopFtlElement INSTANCE = new NoopFtlElement();
+public final class RenderableFtlNoop implements RenderableFtl {
+    public static final RenderableFtlNoop INSTANCE = new RenderableFtlNoop();
 
-    private NoopFtlElement() {
+    private RenderableFtlNoop() {
+    }
+
+    @Override
+    public String toFtlString() {
+        return "";
     }
 }

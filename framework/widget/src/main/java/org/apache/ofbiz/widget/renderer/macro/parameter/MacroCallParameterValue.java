@@ -19,4 +19,5 @@
 package org.apache.ofbiz.widget.renderer.macro.parameter;
 
 public interface MacroCallParameterValue {
+    String toFtlString();
 }

@@ -19,10 +19,24 @@
 package org.apache.ofbiz.widget.renderer.macro.parameter;
 
 import lombok.Value;
+import org.apache.ofbiz.base.util.UtilValidate;
 
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Value
 public final class MacroCallParameterMapValue implements MacroCallParameterValue {
     private Map<String, String> value;
+
+    @Override
+    public String toFtlString() {
+        if (UtilValidate.isNotEmpty(value)) {
+            return value.entrySet()
+                    .stream()
+                    .map(entry -> "'" + entry.getKey() + "':'" + entry.getValue() + "'")
+                    .collect(Collectors.joining(",", "\"{", "}\""));
+        } else {
+            return "\"\"";
+        }
+    }
 }

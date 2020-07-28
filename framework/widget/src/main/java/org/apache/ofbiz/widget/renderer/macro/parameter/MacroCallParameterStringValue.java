@@ -23,4 +23,9 @@ import lombok.Value;
 @Value
 public final class MacroCallParameterStringValue implements MacroCallParameterValue {
     private String value;
+
+    @Override
+    public String toFtlString() {
+        return "\"" + value.replaceAll("\"", "\\\\\"") + "\"";
+    }
 }

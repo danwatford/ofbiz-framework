@@ -31,9 +31,9 @@ import org.apache.ofbiz.widget.model.ModelFormField;
 import org.apache.ofbiz.widget.model.ModelScreenWidget;
 import org.apache.ofbiz.widget.model.ModelTheme;
 import org.apache.ofbiz.widget.renderer.VisualTheme;
-import org.apache.ofbiz.widget.renderer.macro.ftlelement.MacroCallFtlElement;
-import org.apache.ofbiz.widget.renderer.macro.ftlelement.FtlElement;
-import org.apache.ofbiz.widget.renderer.macro.ftlelement.NoopFtlElement;
+import org.apache.ofbiz.widget.renderer.macro.renderable.RenderableFtlMacroCall;
+import org.apache.ofbiz.widget.renderer.macro.renderable.RenderableFtl;
+import org.apache.ofbiz.widget.renderer.macro.renderable.RenderableFtlNoop;
 import org.junit.Test;
 
 import javax.servlet.http.HttpServletRequest;
@@ -46,7 +46,7 @@ import java.util.Map;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 
-public class FormFtlElementBuilderTest {
+public class RenderableFtlFormElementsBuilderTest {
 
     @Injectable
     private VisualTheme visualTheme;
@@ -73,7 +73,7 @@ public class FormFtlElementBuilderTest {
     private ModelFormField modelFormField;
 
     @Tested
-    private FormFtlElementBuilder formFtlElementBuilder;
+    private RenderableFtlFormElementsBuilder renderableFtlFormElementsBuilder;
 
     @Test
     public void emptyLabelUsesNoopMacro(@Mocked ModelScreenWidget.Label label) {
@@ -84,8 +84,8 @@ public class FormFtlElementBuilderTest {
             }
         };
 
-        final FtlElement ftlElement = formFtlElementBuilder.label(ImmutableMap.of(), label);
-        assertThat(ftlElement, equalTo(NoopFtlElement.INSTANCE));
+        final RenderableFtl renderableFtl = renderableFtlFormElementsBuilder.label(ImmutableMap.of(), label);
+        assertThat(renderableFtl, equalTo(RenderableFtlNoop.INSTANCE));
     }
 
     @Test
@@ -97,8 +97,8 @@ public class FormFtlElementBuilderTest {
             }
         };
 
-        final FtlElement ftlElement = formFtlElementBuilder.label(ImmutableMap.of(), label);
-        assertThat(ftlElement,
+        final RenderableFtl renderableFtl = renderableFtlFormElementsBuilder.label(ImmutableMap.of(), label);
+        assertThat(renderableFtl,
                 MacroCallMatcher.hasNameAndParameters("renderLabel",
                         MacroCallParameterMatcher.hasNameAndStringValue("text", "TEXT")));
     }
@@ -115,9 +115,9 @@ public class FormFtlElementBuilderTest {
             }
         };
 
-        final MacroCallFtlElement macroCall = formFtlElementBuilder.displayField(ImmutableMap.of(),
+        final RenderableFtl renderableFtl = renderableFtlFormElementsBuilder.displayField(ImmutableMap.of(),
                 displayField, false);
-        assertThat(macroCall,
+        assertThat(renderableFtl,
                 MacroCallMatcher.hasNameAndParameters("renderDisplayField",
                         MacroCallParameterMatcher.hasNameAndStringValue("type", "TYPE")));
     }
@@ -131,7 +131,7 @@ public class FormFtlElementBuilderTest {
             }
         };
 
-        final MacroCallFtlElement macroCall = formFtlElementBuilder.containerMacroCall(ImmutableMap.of(), containerField);
+        final RenderableFtlMacroCall macroCall = renderableFtlFormElementsBuilder.containerMacroCall(ImmutableMap.of(), containerField);
         assertThat(macroCall,
                 MacroCallMatcher.hasNameAndParameters("renderContainerField",
                         MacroCallParameterMatcher.hasNameAndStringValue("id", "CurrentContainerId")));
@@ -164,8 +164,8 @@ public class FormFtlElementBuilderTest {
             }
         };
 
-        final FtlElement linkElement =
-                formFtlElementBuilder.makeHyperlinkString(subHyperlink, new HashMap<>());
+        final RenderableFtl linkElement =
+                renderableFtlFormElementsBuilder.makeHyperlinkString(subHyperlink, new HashMap<>());
         assertThat(linkElement,
                 MacroCallMatcher.hasNameAndParameters("makeHyperlinkString",
                         MacroCallParameterMatcher.hasNameAndStringValue("linkStyle", "TestLinkStyle"),
@@ -194,8 +194,8 @@ public class FormFtlElementBuilderTest {
         final HashMap<String, Object> context = new HashMap<>();
         context.put("session", httpSession);
 
-        final FtlElement ftlElement = formFtlElementBuilder.textField(context, textField, true);
-        assertThat(ftlElement, MacroCallMatcher.hasNameAndParameters("renderTextField",
+        final RenderableFtl renderableFtl = renderableFtlFormElementsBuilder.textField(context, textField, true);
+        assertThat(renderableFtl, MacroCallMatcher.hasNameAndParameters("renderTextField",
                 MacroCallParameterMatcher.hasNameAndStringValue("id", "CurrentTextId"),
                 MacroCallParameterMatcher.hasNameAndStringValue("value", "TEXTVALUE"),
                 MacroCallParameterMatcher.hasNameAndStringValue("maxlength", Integer.toString(maxLength))));
@@ -228,9 +228,9 @@ public class FormFtlElementBuilderTest {
         context.put("param1", "ThisIsParam1");
         context.put("session", httpSession);
 
-        final FtlElement ftlElement = formFtlElementBuilder.textField(context, textField, true);
-        assertThat(ftlElement, MacroCallMatcher.hasName("renderTextField"));
-        assertThat(ftlElement, MacroCallMatcher.hasParameters(
+        final RenderableFtl renderableFtl = renderableFtlFormElementsBuilder.textField(context, textField, true);
+        assertThat(renderableFtl, MacroCallMatcher.hasName("renderTextField"));
+        assertThat(renderableFtl, MacroCallMatcher.hasParameters(
                 MacroCallParameterMatcher.hasNameAndStringValue("ajaxUrl",
                         "areaId1,http://host.domain/target1,param1=ThisIsParam1&param2=ThisIsParam2,"
                                 + "areaId2,http://host.domain/target2,")));

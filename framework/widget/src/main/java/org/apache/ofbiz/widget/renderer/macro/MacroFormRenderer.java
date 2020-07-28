@@ -92,8 +92,8 @@ import org.jsoup.nodes.Element;
 
 import com.ibm.icu.util.Calendar;
 
-import org.apache.ofbiz.widget.renderer.macro.ftlelement.MacroCallFtlElement;
-import org.apache.ofbiz.widget.renderer.macro.ftlelement.FtlElement;
+import org.apache.ofbiz.widget.renderer.macro.renderable.RenderableFtlMacroCall;
+import org.apache.ofbiz.widget.renderer.macro.renderable.RenderableFtl;
 
 /**
  * Widget Library - Form Renderer implementation based on Freemarker macros
@@ -105,7 +105,7 @@ public final class MacroFormRenderer implements FormStringRenderer {
     private final RequestHandler rh;
     private final HttpServletRequest request;
     private final HttpServletResponse response;
-    private final FormFtlElementBuilder formFtlElementBuilder;
+    private final RenderableFtlFormElementsBuilder renderableFtlFormElementsBuilder;
     private final boolean javaScriptEnabled;
     private final VisualTheme visualTheme;
     private final FtlWriter ftlWriter;
@@ -118,7 +118,7 @@ public final class MacroFormRenderer implements FormStringRenderer {
     }
 
     public MacroFormRenderer(String macroLibraryPath, HttpServletRequest request, HttpServletResponse response,
-                             FtlWriter ftlWriter, FormFtlElementBuilder formFtlElementBuilder) throws IOException {
+                             FtlWriter ftlWriter, RenderableFtlFormElementsBuilder renderableFtlFormElementsBuilder) throws IOException {
         this.request = request;
         this.response = response;
         this.visualTheme = ThemeFactory.resolveVisualTheme(request);
@@ -126,9 +126,9 @@ public final class MacroFormRenderer implements FormStringRenderer {
         this.javaScriptEnabled = UtilHttp.isJavaScriptEnabled(request);
         internalEncoder = UtilCodec.getEncoder("string");
         this.ftlWriter = ftlWriter != null ? ftlWriter : new FtlWriter(macroLibraryPath, this.visualTheme);
-        this.formFtlElementBuilder = formFtlElementBuilder != null
-                ? formFtlElementBuilder
-                : new FormFtlElementBuilder(this.visualTheme, rh, request, response);
+        this.renderableFtlFormElementsBuilder = renderableFtlFormElementsBuilder != null
+                ? renderableFtlFormElementsBuilder
+                : new RenderableFtlFormElementsBuilder(this.visualTheme, rh, request, response);
     }
 
     public boolean getRenderPagination() {
@@ -139,12 +139,12 @@ public final class MacroFormRenderer implements FormStringRenderer {
         this.renderPagination = renderPagination;
     }
 
-    public void writeFtlElement(final Appendable writer, final FtlElement ftlElement) {
-        ftlWriter.executeMacro(writer, ftlElement);
+    public void writeFtlElement(final Appendable writer, final RenderableFtl renderableFtl) {
+        ftlWriter.processFtl(writer, renderableFtl);
     }
 
     private void executeMacro(Appendable writer, String macro) {
-        ftlWriter.executeMacro(writer, macro);
+        ftlWriter.processFtlString(writer, macro);
     }
 
     private String encode(String value, ModelFormField modelFormField, Map<String, Object> context) {
@@ -165,18 +165,18 @@ public final class MacroFormRenderer implements FormStringRenderer {
     }
 
     public void renderLabel(Appendable writer, Map<String, Object> context, ModelScreenWidget.Label label) {
-        final FtlElement ftlElement = formFtlElementBuilder.label(context, label);
-        writeFtlElement(writer, ftlElement);
+        final RenderableFtl renderableFtl = renderableFtlFormElementsBuilder.label(context, label);
+        writeFtlElement(writer, renderableFtl);
     }
 
     @Override
     public void renderDisplayField(Appendable writer, Map<String, Object> context, DisplayField displayField) {
         writeFtlElement(writer,
-                formFtlElementBuilder.displayField(context, displayField, this.javaScriptEnabled));
+                renderableFtlFormElementsBuilder.displayField(context, displayField, this.javaScriptEnabled));
 
         if (displayField instanceof DisplayEntityField) {
             writeFtlElement(writer,
-                    formFtlElementBuilder.makeHyperlinkString(((DisplayEntityField) displayField).getSubHyperlink(),
+                    renderableFtlFormElementsBuilder.makeHyperlinkString(((DisplayEntityField) displayField).getSubHyperlink(),
                             context));
         }
 
@@ -212,9 +212,9 @@ public final class MacroFormRenderer implements FormStringRenderer {
 
     @Override
     public void renderTextField(Appendable writer, Map<String, Object> context, TextField textField) {
-        writeFtlElement(writer, formFtlElementBuilder.textField(context, textField, javaScriptEnabled));
+        writeFtlElement(writer, renderableFtlFormElementsBuilder.textField(context, textField, javaScriptEnabled));
 
-        writeFtlElement(writer, formFtlElementBuilder.makeHyperlinkString(textField.getSubHyperlink(), context));
+        writeFtlElement(writer, renderableFtlFormElementsBuilder.makeHyperlinkString(textField.getSubHyperlink(), context));
 
         final ModelFormField modelFormField = textField.getModelFormField();
         this.addAsterisks(writer, context, modelFormField);
@@ -2925,7 +2925,7 @@ public final class MacroFormRenderer implements FormStringRenderer {
 
     private void appendTooltip(Appendable writer, Map<String, Object> context, ModelFormField modelFormField) {
         // render the tooltip, in other methods too
-        writeFtlElement(writer, formFtlElementBuilder.tooltip(context, modelFormField));
+        writeFtlElement(writer, renderableFtlFormElementsBuilder.tooltip(context, modelFormField));
     }
 
     public void makeHyperlinkString(Appendable writer, ModelFormField.SubHyperlink subHyperlink, Map<String, Object> context) throws IOException {
@@ -2948,8 +2948,8 @@ public final class MacroFormRenderer implements FormStringRenderer {
     }
 
     private void addAsterisks(Appendable writer, Map<String, Object> context, ModelFormField modelFormField) {
-        final FtlElement ftlElement = formFtlElementBuilder.asterisks(context, modelFormField);
-        writeFtlElement(writer, ftlElement);
+        final RenderableFtl renderableFtl = renderableFtlFormElementsBuilder.asterisks(context, modelFormField);
+        writeFtlElement(writer, renderableFtl);
     }
 
     public void appendContentUrl(Appendable writer, String location) throws IOException {
@@ -3133,7 +3133,7 @@ public final class MacroFormRenderer implements FormStringRenderer {
 
     @Override
     public void renderContainerFindField(Appendable writer, Map<String, Object> context, ContainerField containerField) throws IOException {
-        final MacroCallFtlElement containerMc = formFtlElementBuilder.containerMacroCall(context, containerField);
+        final RenderableFtlMacroCall containerMc = renderableFtlFormElementsBuilder.containerMacroCall(context, containerField);
         writeFtlElement(writer, containerMc);
     }
 }

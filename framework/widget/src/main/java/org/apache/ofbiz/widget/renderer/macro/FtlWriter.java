@@ -25,10 +25,7 @@ import org.apache.ofbiz.base.util.Debug;
 import org.apache.ofbiz.base.util.UtilMisc;
 import org.apache.ofbiz.base.util.template.FreeMarkerWorker;
 import org.apache.ofbiz.widget.renderer.VisualTheme;
-import org.apache.ofbiz.widget.renderer.macro.ftlelement.HtmlFtlElement;
-import org.apache.ofbiz.widget.renderer.macro.ftlelement.MacroCallFtlElement;
-import org.apache.ofbiz.widget.renderer.macro.ftlelement.FtlElement;
-import org.apache.ofbiz.widget.renderer.macro.ftlelement.NoopFtlElement;
+import org.apache.ofbiz.widget.renderer.macro.renderable.RenderableFtl;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -37,10 +34,12 @@ import java.rmi.server.UID;
 import java.util.Map;
 import java.util.WeakHashMap;
 
+/**
+ * Processes FTL templates and writes result to Appendables.
+ */
 public final class FtlWriter {
     private static final String MODULE = FtlWriter.class.getName();
 
-    private final FtlMacroCallStringRenderer macroCallRenderer = FtlMacroCallStringRenderer.INSTANCE;
     private final WeakHashMap<Appendable, Environment> environments = new WeakHashMap<>();
     private final Template macroLibrary;
     private final VisualTheme visualTheme;
@@ -50,29 +49,35 @@ public final class FtlWriter {
         this.visualTheme = visualTheme;
     }
 
-    public void executeMacro(final Appendable writer, final FtlElement ftlElement) {
-        if (ftlElement instanceof MacroCallFtlElement) {
-            executeMacro(writer, macroCallRenderer.render((MacroCallFtlElement) ftlElement));
-        } else if (ftlElement instanceof NoopFtlElement) {
-            // No action needed.
-        } else if (ftlElement instanceof HtmlFtlElement) {
-            executeMacro(writer, ((HtmlFtlElement) ftlElement).getHtml());
-        } else {
-            throw new UnsupportedOperationException("Cannot write FtlElement: " + ftlElement);
-        }
+    /**
+     * Process the given RenderableFTL as a template and write the result to the Appendable.
+     *
+     * @param writer        The Appendable to write the result of the template processing to.
+     * @param renderableFtl The Renderable FTL to process as a template.
+     */
+    public void processFtl(final Appendable writer, final RenderableFtl renderableFtl) {
+        processFtlString(writer, renderableFtl.toFtlString());
     }
 
-    public void executeMacro(Appendable writer, String macro) {
+    /**
+     * Process the given FTL string as a template and write the result to the Appendable.
+     *
+     * @param writer    The Appendable to write the result of the template processing to.
+     * @param ftlString The FTL string to process as a template.
+     */
+    public void processFtlString(Appendable writer, String ftlString) {
         try {
-            Environment environment = getEnvironment(writer);
+            final Environment environment = getEnvironment(writer);
             environment.setVariable("visualTheme", FreeMarkerWorker.autoWrap(visualTheme, environment));
-            environment.setVariable("modelTheme", FreeMarkerWorker.autoWrap(visualTheme.getModelTheme(), environment));
-            Reader templateReader = new StringReader(macro);
-            Template template = new Template(new UID().toString(), templateReader, FreeMarkerWorker.getDefaultOfbizConfig());
+            environment.setVariable("modelTheme",
+                    FreeMarkerWorker.autoWrap(visualTheme.getModelTheme(), environment));
+            Reader templateReader = new StringReader(ftlString);
+            Template template = new Template(new UID().toString(), templateReader,
+                    FreeMarkerWorker.getDefaultOfbizConfig());
             templateReader.close();
             environment.include(template);
         } catch (TemplateException | IOException e) {
-            Debug.logError(e, "Error rendering screen thru ftl, macro: " + macro, MODULE);
+            Debug.logError(e, "Error rendering ftl, ftlString: " + ftlString, MODULE);
         }
     }
 

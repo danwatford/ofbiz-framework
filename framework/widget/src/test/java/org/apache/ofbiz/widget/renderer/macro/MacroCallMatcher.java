@@ -18,36 +18,36 @@
  *******************************************************************************/
 package org.apache.ofbiz.widget.renderer.macro;
 
-import org.apache.ofbiz.widget.renderer.macro.ftlelement.FtlElement;
-import org.apache.ofbiz.widget.renderer.macro.ftlelement.MacroCallFtlElement;
+import org.apache.ofbiz.widget.renderer.macro.renderable.RenderableFtl;
+import org.apache.ofbiz.widget.renderer.macro.renderable.RenderableFtlMacroCall;
 import org.hamcrest.Description;
 import org.hamcrest.TypeSafeMatcher;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public final class MacroCallMatcher extends TypeSafeMatcher<FtlElement> {
+public final class MacroCallMatcher extends TypeSafeMatcher<RenderableFtl> {
     private final String macroName;
     private final MacroCallParameterMatcher[] parameterMatchers;
 
-    private boolean failedNameMatch = false;
     private final List<MacroCallParameterMatcher> failedParameterMatchers = new ArrayList<>();
 
     public MacroCallMatcher(final String macroName, final MacroCallParameterMatcher... parameterMatchers) {
-        super(MacroCallFtlElement.class);
+        super(RenderableFtlMacroCall.class);
 
         this.macroName = macroName;
         this.parameterMatchers = parameterMatchers;
     }
 
     @Override
-    protected boolean matchesSafely(final FtlElement item) {
-        final MacroCallFtlElement macroCallFtlElement = (MacroCallFtlElement) item;
-        boolean nameMatched = (macroName == null) || macroName.equals(macroCallFtlElement.getName());
-        failedNameMatch = !nameMatched;
+    protected boolean matchesSafely(final RenderableFtl item) {
+        final RenderableFtlMacroCall macroCall = (RenderableFtlMacroCall) item;
+        boolean nameMatched = (macroName == null) || macroName.equals(macroCall.getName());
 
         for (final MacroCallParameterMatcher parameterMatcher : parameterMatchers) {
-            boolean matchForParameterMatcher = macroCallFtlElement.getParameterStream()
+            boolean matchForParameterMatcher = macroCall.getParameters()
+                    .entrySet()
+                    .stream()
                     .anyMatch(parameterMatcher::matches);
             if (!matchForParameterMatcher) {
                 failedParameterMatchers.add(parameterMatcher);
@@ -68,16 +68,18 @@ public final class MacroCallMatcher extends TypeSafeMatcher<FtlElement> {
     }
 
     @Override
-    protected void describeMismatchSafely(final FtlElement item, final Description mismatchDescription) {
-        final MacroCallFtlElement macroCallFtlElement = (MacroCallFtlElement) item;
+    protected void describeMismatchSafely(final RenderableFtl item, final Description mismatchDescription) {
+        final RenderableFtlMacroCall macroCall = (RenderableFtlMacroCall) item;
 
-        mismatchDescription.appendText("MacroCall has name '" + macroCallFtlElement.getName() + "' ");
+        mismatchDescription.appendText("MacroCall has name '" + macroCall.getName() + "' ");
 
         if (!failedParameterMatchers.isEmpty()) {
             mismatchDescription.appendText("with Parameters[");
             for (final MacroCallParameterMatcher failedParameterMatcher : failedParameterMatchers) {
-                macroCallFtlElement.getParameterStream().forEach(entry ->
-                        failedParameterMatcher.describeMismatch(entry, mismatchDescription));
+                macroCall.getParameters()
+                        .entrySet()
+                        .forEach(entry ->
+                                failedParameterMatcher.describeMismatch(entry, mismatchDescription));
             }
             mismatchDescription.appendText("]");
         }

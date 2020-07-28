@@ -36,11 +36,13 @@ import org.apache.ofbiz.widget.model.ModelScreenWidget.Label;
 import org.apache.ofbiz.widget.model.ModelTheme;
 import org.apache.ofbiz.widget.renderer.Paginator;
 import org.apache.ofbiz.widget.renderer.VisualTheme;
-import org.apache.ofbiz.widget.renderer.macro.ftlelement.MacroCallFtlElement;
-import org.apache.ofbiz.widget.renderer.macro.ftlelement.FtlElement;
-import org.apache.ofbiz.widget.renderer.macro.ftlelement.FtlElementSequence;
-import org.apache.ofbiz.widget.renderer.macro.ftlelement.HtmlFtlElement;
-import org.apache.ofbiz.widget.renderer.macro.ftlelement.NoopFtlElement;
+import org.apache.ofbiz.widget.renderer.macro.renderable.RenderableFtlMacroCall;
+import org.apache.ofbiz.widget.renderer.macro.renderable.RenderableFtl;
+import org.apache.ofbiz.widget.renderer.macro.renderable.RenderableFtlMacroCall.RenderableFtlMacroCallBuilder;
+import org.apache.ofbiz.widget.renderer.macro.renderable.RenderableFtlSequence;
+import org.apache.ofbiz.widget.renderer.macro.renderable.RenderableFtlString;
+import org.apache.ofbiz.widget.renderer.macro.renderable.RenderableFtlNoop;
+import org.apache.ofbiz.widget.renderer.macro.renderable.RenderableFtlString.RenderableFtlStringBuilder;
 import org.jsoup.nodes.Element;
 
 import javax.servlet.http.HttpServletRequest;
@@ -56,33 +58,34 @@ import java.util.Set;
 import java.util.UUID;
 
 /**
- * Creates macro calls used to render various elements of a form.
+ * Creates RenderableFtl objects used to render the various elements of a form.
  */
-public final class FormFtlElementBuilder {
-    private static final String MODULE = FormFtlElementBuilder.class.getName();
+public final class RenderableFtlFormElementsBuilder {
+    private static final String MODULE = RenderableFtlFormElementsBuilder.class.getName();
     private final UtilCodec.SimpleEncoder internalEncoder = UtilCodec.getEncoder("string");
     private final VisualTheme visualTheme;
     private final RequestHandler requestHandler;
     private final HttpServletRequest request;
     private final HttpServletResponse response;
 
-    public FormFtlElementBuilder(final VisualTheme visualTheme, final RequestHandler requestHandler,
-                                 final HttpServletRequest request, final HttpServletResponse response) {
+    public RenderableFtlFormElementsBuilder(final VisualTheme visualTheme, final RequestHandler requestHandler,
+                                            final HttpServletRequest request, final HttpServletResponse response) {
         this.visualTheme = visualTheme;
         this.requestHandler = requestHandler;
         this.request = request;
         this.response = response;
     }
 
-    public FtlElement tooltip(final Map<String, Object> context, final ModelFormField modelFormField) {
+    public RenderableFtl tooltip(final Map<String, Object> context, final ModelFormField modelFormField) {
         final String tooltip = modelFormField.getTooltip(context);
-        return MacroCallFtlElement.builder("renderTooltip")
+        return RenderableFtlMacroCall.builder()
+                .name("renderTooltip")
                 .stringParameter("tooltip", tooltip)
                 .stringParameter("tooltipStyle", modelFormField.getTitleStyle())
                 .build();
     }
 
-    public FtlElement asterisks(final Map<String, Object> context, final ModelFormField modelFormField) {
+    public RenderableFtl asterisks(final Map<String, Object> context, final ModelFormField modelFormField) {
         String requiredField = "false";
         String requiredStyle = "";
         if (modelFormField.getRequiredField()) {
@@ -90,26 +93,28 @@ public final class FormFtlElementBuilder {
             requiredStyle = modelFormField.getRequiredFieldStyle();
         }
 
-        return MacroCallFtlElement.builder("renderAsterisks")
+        return RenderableFtlMacroCall.builder()
+                .name("renderAsterisks")
                 .stringParameter("requiredField", requiredField)
                 .stringParameter("requiredStyle", requiredStyle)
                 .build();
     }
 
-    public FtlElement label(final Map<String, Object> context, final Label label) {
+    public RenderableFtl label(final Map<String, Object> context, final Label label) {
         final String labelText = label.getText(context);
 
         if (UtilValidate.isEmpty(labelText)) {
             // nothing to render
-            return NoopFtlElement.INSTANCE;
+            return RenderableFtlNoop.INSTANCE;
         }
-        return MacroCallFtlElement.builder("renderLabel")
+        return RenderableFtlMacroCall.builder()
+                .name("renderLabel")
                 .stringParameter("text", labelText)
                 .build();
     }
 
-    public MacroCallFtlElement displayField(final Map<String, Object> context, final DisplayField displayField,
-                                            final boolean javaScriptEnabled) {
+    public RenderableFtl displayField(final Map<String, Object> context, final DisplayField displayField,
+                                      final boolean javaScriptEnabled) {
         ModelFormField modelFormField = displayField.getModelFormField();
         String idName = modelFormField.getCurrentContainerId(context);
         String description = displayField.getDescription(context);
@@ -133,14 +138,15 @@ public final class FormFtlElementBuilder {
             description = description.substring(0, size - 8) + "..." + description.substring(description.length() - 5);
         }
 
-        MacroCallFtlElement.FtlMacroCallBuilder builder = MacroCallFtlElement.builder("renderDisplayField");
-        builder.stringParameter("type", type);
-        builder.stringParameter("imageLocation", imageLocation);
-        builder.stringParameter("idName", idName);
-        builder.stringParameter("description", description);
-        builder.stringParameter("title", title);
-        builder.stringParameter("class", modelFormField.getWidgetStyle());
-        builder.stringParameter("alert", modelFormField.shouldBeRed(context) ? "true" : "false");
+        final RenderableFtlMacroCallBuilder builder = RenderableFtlMacroCall.builder()
+                .name("renderDisplayField")
+                .stringParameter("type", type)
+                .stringParameter("imageLocation", imageLocation)
+                .stringParameter("idName", idName)
+                .stringParameter("description", description)
+                .stringParameter("title", title)
+                .stringParameter("class", modelFormField.getWidgetStyle())
+                .stringParameter("alert", modelFormField.shouldBeRed(context) ? "true" : "false");
 
         StringWriter sr = new StringWriter();
         sr.append("<@renderDisplayField ");
@@ -222,8 +228,8 @@ public final class FormFtlElementBuilder {
         return builder.build();
     }
 
-    public FtlElement textField(final Map<String, Object> context, final ModelFormField.TextField textField,
-                                final boolean javaScriptEnabled) {
+    public RenderableFtl textField(final Map<String, Object> context, final ModelFormField.TextField textField,
+                                   final boolean javaScriptEnabled) {
         ModelFormField modelFormField = textField.getModelFormField();
         String name = modelFormField.getParameterName(context);
         String className = "";
@@ -271,7 +277,8 @@ public final class FormFtlElementBuilder {
         boolean readonly = textField.getReadonly();
         String tabindex = modelFormField.getTabindex();
 
-        return MacroCallFtlElement.builder("renderTextField")
+        return RenderableFtlMacroCall.builder()
+                .name("renderTextField")
                 .stringParameter("name", name)
                 .stringParameter("className", className)
                 .stringParameter("alert", alert)
@@ -294,10 +301,10 @@ public final class FormFtlElementBuilder {
                 .build();
     }
 
-    public FtlElement makeHyperlinkString(final ModelFormField.SubHyperlink subHyperlink,
-                                          final Map<String, Object> context) {
+    public RenderableFtl makeHyperlinkString(final ModelFormField.SubHyperlink subHyperlink,
+                                             final Map<String, Object> context) {
         if (subHyperlink == null || !subHyperlink.shouldUse(context)) {
-            return NoopFtlElement.INSTANCE;
+            return RenderableFtlNoop.INSTANCE;
         }
 
         if (UtilValidate.isNotEmpty(subHyperlink.getWidth())) {
@@ -315,11 +322,11 @@ public final class FormFtlElementBuilder {
                 subHyperlink.getModelFormField(), request, response, context);
     }
 
-    public FtlElement makeHyperlinkByType(String linkType, String linkStyle, String targetType, String target,
-                                          Map<String, String> parameterMap, String description, String targetWindow,
-                                          String confirmation, ModelFormField modelFormField,
-                                          HttpServletRequest request, HttpServletResponse response,
-                                          Map<String, Object> context) {
+    public RenderableFtl makeHyperlinkByType(String linkType, String linkStyle, String targetType, String target,
+                                             Map<String, String> parameterMap, String description, String targetWindow,
+                                             String confirmation, ModelFormField modelFormField,
+                                             HttpServletRequest request, HttpServletResponse response,
+                                             Map<String, Object> context) {
         String realLinkType = WidgetWorker.determineAutoLinkType(linkType, target, targetType, request);
         String encodedDescription = encode(description, modelFormField, context);
         // get the parameterized pagination index and size fields
@@ -340,8 +347,8 @@ public final class FormFtlElementBuilder {
             parameterMap.put(viewIndexField, Integer.toString(viewIndex));
             parameterMap.put(viewSizeField, Integer.toString(viewSize));
 
-            final HtmlFtlElement.HtmlFtlElementBuilder htmlFtlElementBuilder = HtmlFtlElement.builder();
-            final StringBuilder htmlStringBuilder = htmlFtlElementBuilder.getStringBuilder();
+            final RenderableFtlStringBuilder renderableFtlStringBuilder = RenderableFtlString.builder();
+            final StringBuilder htmlStringBuilder = renderableFtlStringBuilder.getStringBuilder();
 
             if ("multi".equals(modelForm.getType())) {
                 final Element anchorElement = WidgetWorker.makeHiddenFormLinkAnchorElement(linkStyle,
@@ -350,29 +357,13 @@ public final class FormFtlElementBuilder {
 
                 // this is a bit trickier, since we can't do a nested form we'll have to put the link to submit the
                 // form in place, but put the actual form def elsewhere, ie after the big form is closed
-                HtmlFtlElement.HtmlFtlElementBuilder postFormHtmlFtlElementBuilder = HtmlFtlElement.builder();
-                StringBuilder postFormHtmlStringBuilder = postFormHtmlFtlElementBuilder.getStringBuilder();
-                final Element hiddenFormElement = WidgetWorker.makeHiddenFormLinkFormElement(target, targetType,
-                        targetWindow, parameterMap, modelFormField, request, response, context);
-                postFormHtmlStringBuilder.append(hiddenFormElement.outerHtml());
-                HtmlFtlElement postFormHtmlFtlElement = postFormHtmlFtlElementBuilder.build();
+                final RenderableFtlString postFormRenderableFtlString = RenderableFtlString.withStringBuilder(sb -> {
+                    final Element hiddenFormElement = WidgetWorker.makeHiddenFormLinkFormElement(target, targetType,
+                            targetWindow, parameterMap, modelFormField, request, response, context);
+                    sb.append(hiddenFormElement.outerHtml());
+                });
+                appendToPostFormRenderableFtl(postFormRenderableFtlString, context);
 
-                // If there is already a Post Form Ftl Element, wrap it in a sequence with the new HtmlFtlElement
-                // appended. This ensures we don't overwrite any other elements to be rendered after the main form.
-                final Map<String, Object> wholeFormContext = UtilGenerics.cast(context.get("wholeFormContext"));
-                if (wholeFormContext == null) {
-                    throw new RuntimeException("Cannot access whole form context");
-                }
-                final FtlElement postMultiFormFtlElement = (FtlElement) wholeFormContext.get("postMultiFormFtlElement");
-                if (postMultiFormFtlElement == null) {
-                    wholeFormContext.put("postMultiFormFtlElement", postFormHtmlFtlElement);
-                } else {
-                    final FtlElementSequence postMultiFormFtlElementSequence = FtlElementSequence.builder()
-                            .element(postMultiFormFtlElement)
-                            .element(postFormHtmlFtlElement)
-                            .build();
-                    wholeFormContext.put("postMultiFormFtlElement", postMultiFormFtlElementSequence);
-                }
             } else {
                 final Element hiddenFormElement = WidgetWorker.makeHiddenFormLinkFormElement(target, targetType,
                         targetWindow, parameterMap, modelFormField, request, response, context);
@@ -382,7 +373,7 @@ public final class FormFtlElementBuilder {
                 htmlStringBuilder.append(anchorElement.outerHtml());
             }
 
-            return htmlFtlElementBuilder.build();
+            return renderableFtlStringBuilder.build();
 
         } else {
             if ("layered-modal".equals(realLinkType)) {
@@ -398,12 +389,12 @@ public final class FormFtlElementBuilder {
                     request.setAttribute("height", height);
                 }
                 request.setAttribute("uniqueItemName", uniqueItemName);
-                FtlElement ftlElement = hyperlinkMacroCall(linkStyle, targetType, target, parameterMap,
+                RenderableFtl renderableFtl = hyperlinkMacroCall(linkStyle, targetType, target, parameterMap,
                         encodedDescription, confirmation, modelFormField, request, response, context, targetWindow);
                 request.removeAttribute("uniqueItemName");
                 request.removeAttribute("height");
                 request.removeAttribute("width");
-                return ftlElement;
+                return renderableFtl;
             } else {
                 return hyperlinkMacroCall(linkStyle, targetType, target, parameterMap, encodedDescription, confirmation,
                         modelFormField, request, response, context, targetWindow);
@@ -411,11 +402,11 @@ public final class FormFtlElementBuilder {
         }
     }
 
-    public FtlElement hyperlinkMacroCall(String linkStyle, String targetType, String target,
-                                         Map<String, String> parameterMap, String description, String confirmation,
-                                         ModelFormField modelFormField,
-                                         HttpServletRequest request, HttpServletResponse response,
-                                         Map<String, Object> context, String targetWindow) {
+    public RenderableFtl hyperlinkMacroCall(String linkStyle, String targetType, String target,
+                                            Map<String, String> parameterMap, String description, String confirmation,
+                                            ModelFormField modelFormField,
+                                            HttpServletRequest request, HttpServletResponse response,
+                                            Map<String, Object> context, String targetWindow) {
         if (description != null || UtilValidate.isNotEmpty(request.getAttribute("image"))) {
             StringBuilder linkUrl = new StringBuilder();
             final URI linkUri = WidgetWorker.buildHyperlinkUri(target, targetType,
@@ -467,7 +458,8 @@ public final class FormFtlElementBuilder {
                 height = request.getAttribute("height").toString();
             }
 
-            return MacroCallFtlElement.builder("makeHyperlinkString")
+            return RenderableFtlMacroCall.builder()
+                    .name("makeHyperlinkString")
                     .stringParameter("linkStyle", linkStyle == null ? "" : linkStyle)
                     .stringParameter("hiddenFormName", hiddenFormName)
                     .stringParameter("event", event)
@@ -486,16 +478,17 @@ public final class FormFtlElementBuilder {
                     .stringParameter("id", id)
                     .build();
         } else {
-            return NoopFtlElement.INSTANCE;
+            return RenderableFtlNoop.INSTANCE;
         }
     }
 
-    public MacroCallFtlElement containerMacroCall(final Map<String, Object> context,
-                                                  final ContainerField containerField) {
+    public RenderableFtlMacroCall containerMacroCall(final Map<String, Object> context,
+                                                     final ContainerField containerField) {
         final String id = containerField.getModelFormField().getCurrentContainerId(context);
         String className = UtilFormatOut.checkNull(containerField.getModelFormField().getWidgetStyle());
 
-        return MacroCallFtlElement.builder("renderContainerField")
+        return RenderableFtlMacroCall.builder()
+                .name("renderContainerField")
                 .stringParameter("id", id)
                 .stringParameter("className", className)
                 .build();
@@ -575,6 +568,43 @@ public final class FormFtlElementBuilder {
         }
         Locale locale = UtilMisc.ensureLocale(context.get("locale"));
         return FlexibleStringExpander.expandString(ajaxUrl, context, locale);
+    }
+
+    private void appendToPostFormRenderableFtl(final RenderableFtl renderableFtl, final Map<String, Object> context) {
+        // If there is already a Post Form RenderableFtl, wrap it in a sequence with the given RenderableFtl
+        // appended. This ensures we don't overwrite any other elements to be rendered after the main form.
+        final RenderableFtl current = getPostMultiFormRenderableFtl(context);
+
+        if (current == null) {
+            setPostMultiFormRenderableFtl(renderableFtl, context);
+        } else {
+            final RenderableFtlSequence wrapper = RenderableFtlSequence.builder()
+                    .renderableFtl(current)
+                    .renderableFtl(renderableFtl)
+                    .build();
+            setPostMultiFormRenderableFtl(wrapper, context);
+        }
+
+        final Map<String, Object> wholeFormContext = UtilGenerics.cast(context.get("wholeFormContext"));
+    }
+
+    private RenderableFtl getPostMultiFormRenderableFtl(final Map<String, Object> context) {
+        final Map<String, Object> wholeFormContext = getWholeFormContext(context);
+        return (RenderableFtl) wholeFormContext.get("postMultiFormRenderableFtl");
+    }
+
+    private void setPostMultiFormRenderableFtl(final RenderableFtl postMultiFormRenderableFtl,
+                                               final Map<String, Object> context) {
+        final Map<String, Object> wholeFormContext = getWholeFormContext(context);
+        wholeFormContext.put("postMultiFormRenderableFtl", postMultiFormRenderableFtl);
+    }
+
+    private Map<String, Object> getWholeFormContext(final Map<String, Object> context) {
+        final Map<String, Object> wholeFormContext = UtilGenerics.cast(context.get("wholeFormContext"));
+        if (wholeFormContext == null) {
+            throw new RuntimeException("Cannot access whole form context");
+        }
+        return wholeFormContext;
     }
 
     /**

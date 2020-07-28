@@ -42,8 +42,8 @@ import org.apache.ofbiz.widget.model.ModelScreenWidget;
 import org.apache.ofbiz.widget.model.ModelSingleForm;
 import org.apache.ofbiz.widget.model.ThemeFactory;
 import org.apache.ofbiz.widget.renderer.VisualTheme;
-import org.apache.ofbiz.widget.renderer.macro.ftlelement.FtlElement;
-import org.apache.ofbiz.widget.renderer.macro.ftlelement.MacroCallFtlElement;
+import org.apache.ofbiz.widget.renderer.macro.renderable.RenderableFtl;
+import org.apache.ofbiz.widget.renderer.macro.renderable.RenderableFtlMacroCall;
 import org.hamcrest.Matchers;
 import org.junit.Before;
 import org.junit.Test;
@@ -78,7 +78,7 @@ public class MacroFormRendererTest {
     private FtlWriter ftlWriter;
 
     @Injectable
-    private FormFtlElementBuilder formFtlElementBuilder;
+    private RenderableFtlFormElementsBuilder renderableFtlFormElementsBuilder;
 
     @Mocked
     private HttpSession httpSession;
@@ -108,9 +108,15 @@ public class MacroFormRendererTest {
     private MacroFormRenderer macroFormRenderer;
 
     private final StringWriter appendable = new StringWriter();
-    private MacroCallFtlElement genericMacroCall = MacroCallFtlElement.builder("genericTest").build();
-    private MacroCallFtlElement genericHyperlinkMacroCall = MacroCallFtlElement.builder("genericHyperlink").build();
-    private MacroCallFtlElement genericTooltipMacroCall = MacroCallFtlElement.builder("genericTooltip").build();
+    private RenderableFtlMacroCall genericMacroCall = RenderableFtlMacroCall.builder()
+            .name("genericTest")
+            .build();
+    private RenderableFtlMacroCall genericHyperlinkMacroCall = RenderableFtlMacroCall.builder()
+            .name("genericHyperlink")
+            .build();
+    private RenderableFtlMacroCall genericTooltipMacroCall = RenderableFtlMacroCall.builder()
+            .name("genericTooltip")
+            .build();
 
     @Before
     public void setupMockups() {
@@ -125,7 +131,7 @@ public class MacroFormRendererTest {
     public void labelRenderedAsSingleMacro(@Mocked ModelScreenWidget.Label label) {
         new Expectations() {
             {
-                formFtlElementBuilder.label(withNotNull(), withNotNull());
+                renderableFtlFormElementsBuilder.label(withNotNull(), withNotNull());
                 result = genericMacroCall;
             }
         };
@@ -138,7 +144,7 @@ public class MacroFormRendererTest {
     public void displayFieldRendersFieldWithTooltip(@Mocked ModelFormField.DisplayField displayField) {
         new Expectations() {
             {
-                formFtlElementBuilder.displayField(withNotNull(), withNotNull(), anyBoolean);
+                renderableFtlFormElementsBuilder.displayField(withNotNull(), withNotNull(), anyBoolean);
                 result = genericMacroCall;
             }
         };
@@ -156,13 +162,13 @@ public class MacroFormRendererTest {
             @Mocked ModelFormField.SubHyperlink subHyperlink) {
         new Expectations() {
             {
-                formFtlElementBuilder.displayField(withNotNull(), withNotNull(), anyBoolean);
+                renderableFtlFormElementsBuilder.displayField(withNotNull(), withNotNull(), anyBoolean);
                 result = genericMacroCall;
 
                 displayEntityField.getSubHyperlink();
                 result = subHyperlink;
 
-                formFtlElementBuilder.makeHyperlinkString(subHyperlink, withNotNull());
+                renderableFtlFormElementsBuilder.makeHyperlinkString(subHyperlink, withNotNull());
                 result = genericHyperlinkMacroCall;
             }
         };
@@ -178,20 +184,22 @@ public class MacroFormRendererTest {
     @Test
     public void textFieldRendersFieldWithLinkAndTooltip(@Mocked final ModelFormField.TextField textField,
                                                         @Mocked final ModelFormField.SubHyperlink subHyperlink) {
-        final FtlElement asteriskFtlElement = MacroCallFtlElement.builder("asterisks").build();
+        final RenderableFtl renderableFtlAsterisk = RenderableFtlMacroCall.builder()
+                .name("asterisks")
+                .build();
         new Expectations() {
             {
-                formFtlElementBuilder.textField(withNotNull(), textField, anyBoolean);
+                renderableFtlFormElementsBuilder.textField(withNotNull(), textField, anyBoolean);
                 result = genericMacroCall;
 
                 textField.getSubHyperlink();
                 result = subHyperlink;
 
-                formFtlElementBuilder.makeHyperlinkString(subHyperlink, withNotNull());
+                renderableFtlFormElementsBuilder.makeHyperlinkString(subHyperlink, withNotNull());
                 result = genericHyperlinkMacroCall;
 
-                formFtlElementBuilder.asterisks(withNotNull(), withNotNull());
-                result = asteriskFtlElement;
+                renderableFtlFormElementsBuilder.asterisks(withNotNull(), withNotNull());
+                result = renderableFtlAsterisk;
             }
         };
 
@@ -204,7 +212,7 @@ public class MacroFormRendererTest {
 
         new Verifications() {
             {
-                ftlWriter.executeMacro(appendable, asteriskFtlElement);
+                ftlWriter.processFtl(appendable, renderableFtlAsterisk);
             }
         };
     }
@@ -809,7 +817,7 @@ public class MacroFormRendererTest {
     public void containerRendererAsSingleMacro() throws IOException {
         new Expectations() {
             {
-                formFtlElementBuilder.containerMacroCall(withNotNull(), withNotNull());
+                renderableFtlFormElementsBuilder.containerMacroCall(withNotNull(), withNotNull());
                 result = genericMacroCall;
             }
         };
@@ -908,7 +916,7 @@ public class MacroFormRendererTest {
         new Verifications() {
             {
                 List<String> macros = new ArrayList<>();
-                ftlWriter.executeMacro(withNotNull(), withCapture(macros));
+                ftlWriter.processFtlString(withNotNull(), withCapture(macros));
 
                 assertThat(macros, not(empty()));
                 final String macro = macros.get(0);
@@ -949,7 +957,7 @@ public class MacroFormRendererTest {
     private void genericSingleMacroRenderedVerification() {
         new Verifications() {
             {
-                ftlWriter.executeMacro(appendable, genericMacroCall);
+                ftlWriter.processFtl(appendable, genericMacroCall);
             }
         };
     }
@@ -960,7 +968,7 @@ public class MacroFormRendererTest {
                 fieldInfo.getModelFormField();
                 result = modelFormField;
 
-                formFtlElementBuilder.tooltip(withNotNull(), modelFormField);
+                renderableFtlFormElementsBuilder.tooltip(withNotNull(), modelFormField);
                 result = genericTooltipMacroCall;
             }
         };
@@ -969,7 +977,7 @@ public class MacroFormRendererTest {
     private void genericTooltipRenderedVerification() {
         new Verifications() {
             {
-                ftlWriter.executeMacro(appendable, genericTooltipMacroCall);
+                ftlWriter.processFtl(appendable, genericTooltipMacroCall);
             }
         };
     }
@@ -998,7 +1006,7 @@ public class MacroFormRendererTest {
     private void genericSubHyperlinkRenderedVerification() {
         new Verifications() {
             {
-                ftlWriter.executeMacro(appendable, genericHyperlinkMacroCall);
+                ftlWriter.processFtl(appendable, genericHyperlinkMacroCall);
             }
         };
     }

@@ -16,12 +16,26 @@
  * specific language governing permissions and limitations
  * under the License.
  *******************************************************************************/
-package org.apache.ofbiz.widget.renderer.macro;
+package org.apache.ofbiz.widget.renderer.macro.renderable;
 
-import org.apache.ofbiz.widget.renderer.macro.ftlelement.MacroCallFtlElement;
+import lombok.Builder;
+import lombok.Singular;
 
-public interface FtlMacroCallStringRenderer {
-    FtlMacroCallStringRenderer INSTANCE = new DefaultFtlMacroCallStringRenderer();
+import java.util.List;
+import java.util.stream.Collectors;
 
-    String render(MacroCallFtlElement macroCall);
+/**
+ * Class for composing multiple RenderableFtl objects in a sequence.
+ */
+@Builder
+public final class RenderableFtlSequence implements RenderableFtl {
+    @Singular
+    private final List<RenderableFtl> renderableFtls;
+
+    @Override
+    public String toFtlString() {
+        return renderableFtls.stream()
+                .map(RenderableFtl::toFtlString)
+                .collect(Collectors.joining());
+    }
 }

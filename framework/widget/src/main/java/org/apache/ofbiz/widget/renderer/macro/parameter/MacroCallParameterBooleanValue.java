@@ -23,4 +23,9 @@ import lombok.Value;
 @Value
 public final class MacroCallParameterBooleanValue implements MacroCallParameterValue {
     private boolean value;
+
+    @Override
+    public String toFtlString() {
+        return Boolean.toString(value);
+    }
 }

@@ -16,7 +16,11 @@
  * specific language governing permissions and limitations
  * under the License.
  *******************************************************************************/
-package org.apache.ofbiz.widget.renderer.macro.ftlelement;
+package org.apache.ofbiz.widget.renderer.macro.renderable;
 
-public interface FtlElement {
+/**
+ * Component that can be rendered to an FTL (FreeMarker Template Language) string.
+ */
+public interface RenderableFtl {
+    String toFtlString();
 }

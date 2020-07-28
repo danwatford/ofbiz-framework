@@ -16,43 +16,48 @@
  * specific language governing permissions and limitations
  * under the License.
  *******************************************************************************/
-package org.apache.ofbiz.widget.renderer.macro.ftlelement;
+package org.apache.ofbiz.widget.renderer.macro.renderable;
 
 import lombok.ToString;
 
 import java.util.function.Consumer;
 
 @ToString
-public final class HtmlFtlElement implements FtlElement {
-    private final String html;
+public final class RenderableFtlString implements RenderableFtl {
+    private final String ftlString;
 
-    public HtmlFtlElement(final String html) {
-        this.html = html;
+    public RenderableFtlString(final String ftlString) {
+        this.ftlString = ftlString;
     }
 
-    public String getHtml() {
-        return html;
+    public String getFtlString() {
+        return ftlString;
     }
 
-    public static HtmlFtlElementBuilder builder() {
-        return new HtmlFtlElementBuilder();
+    public static RenderableFtlStringBuilder builder() {
+        return new RenderableFtlStringBuilder();
     }
 
-    public static HtmlFtlElement withStringBuilder(final Consumer<StringBuilder> callback) {
-        final HtmlFtlElementBuilder builder = builder();
+    public static RenderableFtlString withStringBuilder(final Consumer<StringBuilder> callback) {
+        final RenderableFtlStringBuilder builder = builder();
         callback.accept(builder.getStringBuilder());
         return builder.build();
     }
 
-    public static final class HtmlFtlElementBuilder {
+    @Override
+    public String toFtlString() {
+        return ftlString;
+    }
+
+    public static final class RenderableFtlStringBuilder {
         private final StringBuilder stringBuilder = new StringBuilder();
 
         public StringBuilder getStringBuilder() {
             return stringBuilder;
         }
 
-        public HtmlFtlElement build() {
-            return new HtmlFtlElement(stringBuilder.toString());
+        public RenderableFtlString build() {
+            return new RenderableFtlString(stringBuilder.toString());
         }
     }
 }
