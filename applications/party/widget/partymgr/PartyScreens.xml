@@ -462,7 +462,7 @@ under the License.
                             <widgets>
                                 <platform-specific>
                                     <html>
-                                        <html-template location="component://common-theme/template/includes/SetDependentDropdownValuesJs.ftl"/>
+                                        <html-template location="component://common-theme/template/includes/SetDependentDropdownRestValuesJs.ftl"/>
                                         <html-template location="component://party/template/party/EditContactMech.ftl"/>
                                     </html>
                                 </platform-specific>

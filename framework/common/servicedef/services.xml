@@ -772,7 +772,7 @@ under the License.
         <description>Get a list of country and associated states from Geo</description>
         <attribute name="countryList" mode="OUT" type="java.util.List"/>
     </service>
-    <service name="getAssociatedStateList" engine="groovy" auth="false"
+    <service name="getAssociatedStateList" engine="groovy" auth="false" export="true" action="get"
         location="component://common/groovyScripts/CommonServices.groovy" invoke="getAssociatedStateList">
         <attribute name="countryGeoId" mode="IN" type="String" optional="false"/>
         <attribute name="listOrderBy" mode="IN" type="String" optional="true"/>
