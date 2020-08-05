@@ -288,6 +288,14 @@ under the License.
         <attribute name="partyIdTo" type="String" mode="IN" optional="false"/>
     </service>
 
+    <service name="lookupUserLogin" engine="groovy"
+        location="component://party/groovyScripts/party/LookupServices.groovy" invoke="lookupUserLogin" auth="true"
+        export="true" action="GET">
+        <description>Lookup user logins</description>
+        <attribute name="searchTerm" type="String" mode="IN" optional="false"/>
+        <attribute name="lookupResult" type="List" mode="OUT" optional="false"/>
+    </service>
+
     <service name="lookupParty" engine="groovy"
         location="component://party/groovyScripts/party/LookupServices.groovy" invoke="lookupParty" auth="true">
         <description>Performs a lookup for parties</description>

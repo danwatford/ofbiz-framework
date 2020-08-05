@@ -190,7 +190,8 @@ var Lookup = function(options) {
         presentation : options.presentation || "layer",
         defaultMinLength : options.defaultMinLength || "",
         defaultDelay : options.defaultDelay || "",
-        args : options.args || ""
+        args : options.args || "",
+        restEndpoint: options.restEndpoint || ""
     }
     if (options.showDescription)
         options.showDescription = options.showDescription.toString();
@@ -253,7 +254,7 @@ var Lookup = function(options) {
             // write the new input box id in the ajaxUrl Array
             options.ajaxUrl = options.ajaxUrl.replace(options.ajaxUrl.substring(0, options.ajaxUrl.indexOf(",")), _newInputBoxId);
             new ajaxAutoCompleter(options.ajaxUrl, (options.showDescription == "true") ? true : false, options.defaultMinLength, options.defaultDelay,
-                    options.formName, options.args);
+                    options.formName, options.args, options.restEndpoint);
         }
     }
 

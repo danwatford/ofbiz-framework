@@ -226,10 +226,16 @@ function bindObservers(bind_element) {
                 dialogOptionalTarget = form.find("input[name=" + element.data("lookup-optional-target")+"]").get(0);
             var lookupArgs = element.data("lookup-args");
             var args = [];
+            var restEndpoint;
             if (lookupArgs){
                 jQuery.each(lookupArgs.split(', '), function (index, value) {
-                    var argElement = form.find("input[name=" + value + "]").get(0);
-                    args.push(argElement);
+                    // For experimenting with REST - see if we have a REST endpoint hidden in the lookup arguments.
+                    if (value.startsWith('rest=')) {
+                        restEndpoint = value.substring(5);
+                    } else {
+                        var argElement = form.find("input[name=" + value + "]").get(0);
+                        args.push(argElement);
+                    }
                 });
             }
 
@@ -248,7 +254,8 @@ function bindObservers(bind_element) {
                 presentation : presentation,
                 defaultMinLength : defaultMinLength,
                 defaultDelay : defaultDelay,
-                args : args
+                args : args,
+                restEndpoint: restEndpoint
             };
             new Lookup(options).init();
         }
@@ -733,12 +740,15 @@ function ajaxSubmitFormUpdateAreas(form, areaCsvString) {
 function ajaxAutoCompleter(areaCsvString, showDescription, defaultMinLength, defaultDelay, formName) {
     ajaxAutoCompleter(areaCsvString, showDescription, defaultMinLength, defaultDelay, formName, null);
 }
-function ajaxAutoCompleter(areaCsvString, showDescription, defaultMinLength, defaultDelay, formName, args) {
+function ajaxAutoCompleter(areaCsvString, showDescription, defaultMinLength, defaultDelay, formName, args, restEndpoint) {
     var areaArray = areaCsvString.replace(/&amp;/g, '&').split(",");
     var numAreas = parseInt(areaArray.length / 3);
 
     for (var i = 0; i < numAreas * 3; i = i + 3) {
         var initUrl = areaArray[i + 1];
+        if (restEndpoint) {
+            initUrl = restEndpoint;
+        }
         if (initUrl.indexOf("?") > -1)
             var url = initUrl + "&" + areaArray[i + 2];
         else
@@ -759,10 +769,31 @@ function ajaxAutoCompleter(areaCsvString, showDescription, defaultMinLength, def
                          queryArgs["parm" + i] = jQuery(args[i]).val();
                      }
                 }
+
+                if (restEndpoint) {
+                    var inParams = {
+                        searchTerm: request.term
+                    };
+                    queryArgs = [
+                        {
+                            name: "inParams",
+                            value: JSON.stringify(inParams)
+                        }
+                    ];
+                }
+
+                var headers = {};
+                if (restEndpoint) {
+                    headers = {
+                        "Authorization": "Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJpc3MiOiJBcGFjaGVPRkJpeiIsImlhdCI6MTU0NzczOTM0OCwiZXhwIjoxNjc5Mjc1MzQ4LCJhdWQiOiJ3d3cuZXhhbXBsZS5jb20iLCJzdWIiOiJqcm9ja2V0QGV4YW1wbGUuY29tIiwiR2l2ZW5OYW1lIjoiSm9obm55IiwiU3VybmFtZSI6IlJvY2tldCIsIkVtYWlsIjoianJvY2tldEBleGFtcGxlLmNvbSIsInVzZXJMb2dpbklkIjoiYWRtaW4iLCJSb2xlIjpbIk1hbmFnZXIiLCJQcm9qZWN0IEFkbWluaXN0cmF0b3IiXX0.fwafgrgpodBJcXxNTQdZknKeWKb3sDOsQrcR2vcRw97FznD6mkE79p10Tu7cqpUx7LiXuROUAnXEgqDice-BSg"
+                    }
+                }
+
                 jQuery.ajax({
                     url: url,
-                    type: "post",
+                    type: restEndpoint ? "get" : "post",
                     data: queryArgs,
+                    headers: headers,
                     beforeSend: function (jqXHR, settings) {
                         //If LAST_AUTOCOMP_REF is not null means an existing ajax auto-completer request is in progress, so need to abort them to prevent inconsistent behavior of autocompleter
                         if (LAST_AUTOCOMP_REF != null && LAST_AUTOCOMP_REF.readyState != 4) {
@@ -774,6 +805,12 @@ function ajaxAutoCompleter(areaCsvString, showDescription, defaultMinLength, def
                         LAST_AUTOCOMP_REF= jqXHR;
                     },
                     success: function(data) {
+                        if (restEndpoint) {
+                            var lookupResult = data.data.lookupResult;
+                            response(lookupResult);
+                            return;
+                        }
+
                         // reset the autocomp field
                         autocomp = undefined;
 

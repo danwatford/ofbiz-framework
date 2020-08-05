@@ -17,6 +17,12 @@
  * under the License.
  */
 
+import org.apache.ofbiz.entity.condition.EntityCondition
+import org.apache.ofbiz.entity.condition.EntityFieldValue
+import org.apache.ofbiz.entity.condition.EntityFunction
+import org.apache.ofbiz.entity.condition.EntityOperator
+import org.apache.ofbiz.entity.util.EntityFindOptions
+
 /*
  * lookupParty is deprecated, and only present for backward compatibility during the deprecation time
  */
@@ -28,5 +34,48 @@ def lookupParty() {
     }
     Map result = success()
     result.lookupResult = lookupResult
+    return result
+}
+
+def lookupUserLogin() {
+    def searchFieldsList = ["userLoginId", "partyId", "firstName", "lastName", "groupName"]
+    def searchValue = "%" + parameters.searchTerm.toUpperCase() + "%"
+
+    def orExprs = []
+    searchFieldsList.each { fieldName ->
+        orExprs.add(EntityCondition.makeCondition(EntityFunction.UPPER(EntityFieldValue.makeFieldValue(fieldName)),
+                EntityOperator.LIKE, searchValue))
+    }
+
+    def entityConditionList = EntityCondition.makeCondition(orExprs, EntityOperator.OR)
+
+    EntityFindOptions findOptions = new EntityFindOptions()
+    findOptions.setMaxRows(10)
+    findOptions.setDistinct(true)
+
+    def resultsList = autocompleteOptions = delegator.findList("UserLoginAndPartyDetails",
+            entityConditionList,
+            searchFieldsList.toSet(),
+            searchFieldsList,
+            findOptions,
+            true)
+
+    // For each result construct label and value properties which will be passed to the jquery autocompleter.
+    // This should probably be done client-side, but there isn't an suitable hook to do so at the moment.
+    def lookupResult = resultsList
+            .collect {
+                def item = ["value": it.userLoginId]
+                def label = [it.partyId, it.firstName, it.lastName, "[$it.userLoginId]"]
+                        .findAll()
+                        .join(' ')
+                item.put("label", label)
+
+                item << it
+                item
+            }
+
+    Map result = success()
+    result.lookupResult = lookupResult
+
     return result
 }

@@ -39,6 +39,7 @@ function getDependentDropdownValues(request, paramKey, paramField, targetField, 
     input = '#' + inputField;
     targetTitle = target + '_title'
     optionList = '';
+    var list;
 
     var paramData = new Array();
     // if there are multiple paramKeys (because of multiple dependencies) then create 
@@ -66,71 +67,143 @@ function getDependentDropdownValues(request, paramKey, paramField, targetField, 
         success: function(result){
             list = result[responseName];
             // Create and show dependent select options
-            if (list) {
-                if(allowEmpty) {
-                    // Allow null selection in dependent and set it as default if no selection exists.
-                    if (selected == undefined || selected == "_none_") {
-                      optionList += "<option selected='selected' value=''></option>";
-                    } else {
-                      optionList += "<option value=''></option>";
-                    }
-                }
-                jQuery.each(list, function(key, value){
-                    if (typeof value == 'string') {
-                        values = value.split(': ');
-                        if (values[1].indexOf(selected) >= 0 && selected.length > 0 && selected == values[1]) {
-                            optionList += "<option selected='selected' value = '" + values[1] + "' >" + values[0] + "</option>";
-                        } else {
-                            optionList += "<option value = '" + values[1] + "' >" + values[0] + "</option>";
-                        }
-                    } else {
-                        if (value[keyName] == selected) {
-                            optionList += "<option selected='selected' value = '" + value[keyName] + "' >" + value[descName] + "</option>";
-                        } else {
-                            optionList += "<option value = '" + value[keyName] + "' >" + value[descName] + "</option>";
-                        }
-                    }
-                })
-            };
+            optionList = processListAsDropdownValues(list, allowEmpty, selected, keyName, descName);
+
             // Hide/show the dependent drop-down if hide=true else simply disable/enable
-            if ((!list) || (list.length < 1) || ((list.length == 1) && jQuery.inArray("_NA_", list) != -1)) {
-                jQuery(target).attr('disabled', 'disabled');
-                if (hide) {
-                    if (jQuery(target).is(':visible')) {
-                        jQuery(target).fadeOut(2500);
-                        if (hideTitle) jQuery(targetTitle).fadeOut(2500);
-                    } else {
-                        jQuery(target).fadeIn();
-                        if (hideTitle) jQuery(targetTitle).fadeIn();
-                        jQuery(target).fadeOut(2500);
-                        if (hideTitle) jQuery(targetTitle).fadeOut(2500);
-                    }
-                }
-            } else {
-                jQuery(target).removeAttr('disabled');
-                if (hide) {
-                    if (!jQuery(target).is(':visible')) {
-                        jQuery(target).fadeIn();
-                        if (hideTitle) jQuery(targetTitle).fadeIn();
-                    }
-                }
-            }
+            setDropdownVisibility(list, target, targetTitle, hide)
         },
-        complete: function(){
-            // this is to handle a specific case where an input field is needed instead of a drop-down when no values are returned by the request (else if allow-empty="true" is used autoComplete handle the case)
-            // this could be extended later to use an auto-completed drop-down or a lookup, instead of drop-down currently, when there are too much values to populate
-            // Another option is to use an input field with Id instead of a drop-down, see setPriceRulesCondEventJs.ftl and top of getAssociatedPriceRulesConds service
-            if (!list && inputField) {
-                jQuery(target).hide();
-                jQuery(input).show();
-            } else if (inputField) {
-                jQuery(input).hide();
-                jQuery(target).show();
-            }
+        complete: function() {
+            showDropdownOrInput(list, inputField, target, input)
             jQuery(target).html(optionList).click().change(); // .change() needed when using also asmselect on same field, .click() specifically for IE8
             if (callback != null) eval(callback);
         }
     });
+}
+
+function getDependentDropdownValuesRest(request, paramKey, paramField, targetField, responseName, keyName, descName, selected, callback, allowEmpty, hide, hideTitle, inputField){
+    // Parameters match getDependentDropdownValues function.
+    target = '#' + targetField;
+    input = '#' + inputField;
+    targetTitle = target + '_title'
+    optionList = '';
+
+    var paramData = [];
+    // if there are multiple paramKeys (because of multiple dependencies) then create
+    // an array with multiple data information
+    if (paramKey.indexOf(",") > -1) {
+    	    var paramKeyArr = paramKey.split(",");
+    	    var paramFieldArr = paramField.split(",");
+
+    	    // Both arrays should be the same length
+    	    for (var i=0; i<paramKeyArr.length; i++) {
+    	        paramData.push({name: paramKeyArr[i], value: jQuery('#' + paramFieldArr[i]).val()});
+    	    }
+    } else {
+        var inParams = {
+            [paramKey]: jQuery('#' + paramField).val()
+        }
+        paramData = [
+            {
+                name: "inParams",
+                value: JSON.stringify(inParams)
+            }
+        ]
+    }
+
+    jQuery.ajax({
+        url: request,
+        data: paramData, // get requested value from parent drop-down field
+        async: false,
+        type: 'GET',
+        headers: {
+            "Authorization": "Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJpc3MiOiJBcGFjaGVPRkJpeiIsImlhdCI6MTU0NzczOTM0OCwiZXhwIjoxNjc5Mjc1MzQ4LCJhdWQiOiJ3d3cuZXhhbXBsZS5jb20iLCJzdWIiOiJqcm9ja2V0QGV4YW1wbGUuY29tIiwiR2l2ZW5OYW1lIjoiSm9obm55IiwiU3VybmFtZSI6IlJvY2tldCIsIkVtYWlsIjoianJvY2tldEBleGFtcGxlLmNvbSIsInVzZXJMb2dpbklkIjoiYWRtaW4iLCJSb2xlIjpbIk1hbmFnZXIiLCJQcm9qZWN0IEFkbWluaXN0cmF0b3IiXX0.fwafgrgpodBJcXxNTQdZknKeWKb3sDOsQrcR2vcRw97FznD6mkE79p10Tu7cqpUx7LiXuROUAnXEgqDice-BSg"
+        },
+        success: function (result) {
+            list = result.data[responseName];
+
+            // Create and show dependent select options
+            optionList = processListAsDropdownValues(list, allowEmpty, selected, keyName, descName);
+
+            // Hide/show the dependent drop-down if hide=true else simply disable/enable
+            setDropdownVisibility(list, target, targetTitle, hide)
+        },
+        complete: function() {
+            showDropdownOrInput(list, inputField, target, input)
+
+            jQuery(target).html(optionList).click().change(); // .change() needed when using also asmselect on same field, .click() specifically for IE8
+            if (callback != null) eval(callback);
+        }
+    });
+}
+
+function processListAsDropdownValues(list, allowEmpty, selected, keyName, descName) {
+    var optionList = '';
+    if (list) {
+        if(allowEmpty) {
+            // Allow null selection in dependent and set it as default if no selection exists.
+            if (selected == undefined || selected == "_none_") {
+                optionList += "<option selected='selected' value=''></option>";
+            } else {
+                optionList += "<option value=''></option>";
+            }
+        }
+        jQuery.each(list, function(key, value){
+            if (typeof value == 'string') {
+                values = value.split(': ');
+                if (values[1].indexOf(selected) >= 0 && selected.length > 0 && selected == values[1]) {
+                    optionList += "<option selected='selected' value = '" + values[1] + "' >" + values[0] + "</option>";
+                } else {
+                    optionList += "<option value = '" + values[1] + "' >" + values[0] + "</option>";
+                }
+            } else {
+                if (value[keyName] == selected) {
+                    optionList += "<option selected='selected' value = '" + value[keyName] + "' >" + value[descName] + "</option>";
+                } else {
+                    optionList += "<option value = '" + value[keyName] + "' >" + value[descName] + "</option>";
+                }
+            }
+        })
+    };
+
+    return optionList;
+}
+
+function setDropdownVisibility(list, target, targetTitle, hide) {
+    if ((!list) || (list.length < 1) || ((list.length == 1) && jQuery.inArray("_NA_", list) != -1)) {
+        jQuery(target).attr('disabled', 'disabled');
+        if (hide) {
+            if (jQuery(target).is(':visible')) {
+                jQuery(target).fadeOut(2500);
+                if (hideTitle) jQuery(targetTitle).fadeOut(2500);
+            } else {
+                jQuery(target).fadeIn();
+                if (hideTitle) jQuery(targetTitle).fadeIn();
+                jQuery(target).fadeOut(2500);
+                if (hideTitle) jQuery(targetTitle).fadeOut(2500);
+            }
+        }
+    } else {
+        jQuery(target).removeAttr('disabled');
+        if (hide) {
+            if (!jQuery(target).is(':visible')) {
+                jQuery(target).fadeIn();
+                if (hideTitle) jQuery(targetTitle).fadeIn();
+            }
+        }
+    }
+}
+
+function showDropdownOrInput(list, inputField, target, input) {
+    // this is to handle a specific case where an input field is needed instead of a drop-down when no values are returned by the request (else if allow-empty="true" is used autoComplete handle the case)
+    // this could be extended later to use an auto-completed drop-down or a lookup, instead of drop-down currently, when there are too much values to populate
+    // Another option is to use an input field with Id instead of a drop-down, see setPriceRulesCondEventJs.ftl and top of getAssociatedPriceRulesConds service
+    if (!list && inputField) {
+        jQuery(target).hide();
+        jQuery(input).show();
+    } else if (inputField) {
+        jQuery(input).hide();
+        jQuery(target).show();
+    }
 }
 
 //*** calls any service already mounted as an event
