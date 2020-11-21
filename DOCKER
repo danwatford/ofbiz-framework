@@ -1,0 +1,19 @@
+Building and Running with Docker on localhost
+
+The following has been tested in the following environment:
+- Windows 10 PRO
+- Docker for Windows using WSL2
+- git-bash
+
+A docker image of ofbiz can be built based on your checked out workspace using command:
+./gradlew --no-daemon buildDockerImage
+
+This will build an image, tagged ofbiz:latest, which uses the derby database driver and loaded with default data.
+
+To run a container based on this image that is cleaned up on termination:
+docker run -it --rm --publish 8080:8080 --publish 8443:8443 ofbiz:latest
+
+Visit https://localhost:8443/partymgr
+Username / Password: admin / ofbiz
+
+Use Ctrl-c to terminate the container.

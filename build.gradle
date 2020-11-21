@@ -19,6 +19,7 @@
 import at.bxm.gradleplugins.svntools.tasks.SvnCheckout
 import org.apache.tools.ant.filters.ReplaceTokens
 import org.asciidoctor.gradle.AsciidoctorTask
+import com.bmuschko.gradle.docker.tasks.image.*
 
 /* ========================================================
  * Project setup
@@ -36,6 +37,7 @@ plugins {
     id 'com.github.ben-manes.versions' version '0.36.0' apply false
     id "com.github.ManifestClasspath" version "0.1.0-RELEASE"
     id "com.github.jakemarsden.git-hooks" version "0.0.2"
+    id "com.bmuschko.docker-remote-api" version "6.6.1"
 }
 
 /* OWASP plugin
@@ -1105,4 +1107,39 @@ new File("${gradle.getGradleUserHomeDir().getAbsolutePath()}/daemon/${gradle.get
         logger.debug("Cleaning up daemon log file $it")
         it.delete()
     }
+}
+
+task createOfbizDockerfile(type: Dockerfile) {
+    from 'openjdk:8-jdk'
+    label(['maintainer': 'Apache OFBiz (http://ofbiz.apache.org)'])
+
+    // Set default 2G memory for OFBiz.
+    environmentVariable('JAVA_OPTS', '-Xmx2G')
+
+    exposePort(8080, 8443)
+
+    workingDir('/ofbiz')
+
+    // Copy 'just enough gradle' configuration so that we can download the gradle distribution and get it stored
+    // by an early image layer so it is easily reused in repeated builds.
+    copyFile('gradlew', '.');
+    copyFile('gradle', 'gradle/');
+    runCommand('./gradlew --no-daemon --info --version')
+
+    copyFile('.', '.')
+    runCommand('./gradlew --no-daemon --info build')
+    runCommand('./gradlew --no-daemon --info loadAll')
+
+    entryPoint('./gradlew', '--no-daemon')
+    defaultCommand('ofbiz')
+}
+
+// Build the docker image, but execute the docker command directly rather than using the DockerBuildImage task type
+// from the docker-remote-api. This is needed to ensure our .dockerignore file is taken into account and excludes
+// the .git directory.
+// docker-remote-api depends on the docker-java library (https://github.com/docker-java/docker-java) which hasn't
+// implemented processing of .dockerignore file yet.
+task buildDockerImage(type: Exec) {
+    dependsOn createOfbizDockerfile
+    commandLine "docker", "build", "--file", createOfbizDockerfile.getOutputs().getFiles().getSingleFile(), "--tag", "ofbiz:latest", project.getProjectDir()
 }
