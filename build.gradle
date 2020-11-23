@@ -1109,7 +1109,7 @@ new File("${gradle.getGradleUserHomeDir().getAbsolutePath()}/daemon/${gradle.get
     }
 }
 
-task createOfbizDockerfile(type: Dockerfile) {
+task createOfbizBaseDockerfile(type: Dockerfile) {
     from 'openjdk:8-jdk'
     label(['maintainer': 'Apache OFBiz (http://ofbiz.apache.org)'])
 
@@ -1134,12 +1134,23 @@ task createOfbizDockerfile(type: Dockerfile) {
     defaultCommand('ofbiz')
 }
 
-// Build the docker image, but execute the docker command directly rather than using the DockerBuildImage task type
+// Build the base docker image, but execute the docker command directly rather than using the DockerBuildImage task type
 // from the docker-remote-api. This is needed to ensure our .dockerignore file is taken into account and excludes
 // the .git directory.
 // docker-remote-api depends on the docker-java library (https://github.com/docker-java/docker-java) which hasn't
 // implemented processing of .dockerignore file yet.
-task buildDockerImage(type: Exec) {
+task buildOfbizBaseDockerImage(type: Exec) {
+    dependsOn createOfbizBaseDockerfile
+    commandLine "docker", "build", "--file", createOfbizBaseDockerfile.getOutputs().getFiles().getSingleFile(), "--tag", "ofbizbase:latest", project.getProjectDir()
+}
+
+task createOfbizDockerfile(type: Dockerfile) {
+    from 'ofbizbase:latest'
+    copyFile('.', '.')
+    runCommand('./gradlew --no-daemon --info build')
+}
+
+task buildOfbizDockerImage(type: Exec) {
     dependsOn createOfbizDockerfile
     commandLine "docker", "build", "--file", createOfbizDockerfile.getOutputs().getFiles().getSingleFile(), "--tag", "ofbiz:latest", project.getProjectDir()
 }
